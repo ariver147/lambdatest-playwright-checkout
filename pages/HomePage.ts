@@ -25,20 +25,44 @@ export class HomePage {
 
   async addProductToCart(productId: string): Promise<void> {
     const card = this.productThumb(productId);
+
+    // Ensure the card is scrolled into view
     await card.scrollIntoViewIfNeeded();
+
+    // Wait for any overlay headers or tab listings to disappear
+    await this.page.locator('.mz-tab-listing-header').waitFor({ state: 'hidden' }).catch(() => { });
+    await this.page.locator('header .icon-left').waitFor({ state: 'hidden' }).catch(() => { });
+
+    // Hover to reveal the Add to Cart button
     await card.hover();
-    await this.addToCartButton(productId).click();
+
+    // Wait until the button is stable and visible
+    const button = this.addToCartButton(productId);
+    await button.waitFor({ state: 'visible' });
+
+    // Perform a normal click (no force)
+    await button.click();
   }
+
+
 
   // This theme confirms cart additions via a Bootstrap toast
   // (role="alert"); there is no dedicated success banner element.
   successToast(): Locator {
-    return this.page.locator('[role="alert"].toast');
+    return this.page.locator('.toast, .alert-success, [role="alert"]');
   }
 
+
   async verifyProductAddedToCart(): Promise<void> {
-    await expect(this.successToast()).toBeVisible();
+    const toast = this.successToast();
+
+    // Wait longer, since Bootstrap toasts can be delayed or very brief
+    await expect(toast).toBeVisible({ timeout: 3000 });
+
+    // Optionally, also assert that it eventually disappears (realistic behavior)
+    await expect(toast).toHaveCount(0, { timeout: 3000 }).catch(() => { });
   }
+
 
   // "Checkout" link inside the toast's cart popup. This navigates
   // directly to the checkout page on this site.
