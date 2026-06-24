@@ -26,23 +26,22 @@ export class HomePage {
   async addProductToCart(productId: string): Promise<void> {
     const card = this.productThumb(productId);
 
-    // Ensure the card is scrolled into view
+    // Ensure the card is visible and hovered
     await card.scrollIntoViewIfNeeded();
-
-    // Wait for any overlay headers or tab listings to disappear
-    await this.page.locator('.mz-tab-listing-header').waitFor({ state: 'hidden' }).catch(() => { });
-    await this.page.locator('header .icon-left').waitFor({ state: 'hidden' }).catch(() => { });
-
-    // Hover to reveal the Add to Cart button
     await card.hover();
 
-    // Wait until the button is stable and visible
     const button = this.addToCartButton(productId);
+
+    // Wait until the button is visible
     await button.waitFor({ state: 'visible' });
 
-    // Perform a normal click (no force)
+    // Small delay to let sticky headers/animations settle
+    await this.page.waitForTimeout(500);
+
+    // Perform a normal click (no force, no bounding box)
     await button.click();
   }
+
 
 
 
@@ -51,6 +50,7 @@ export class HomePage {
   successToast(): Locator {
     return this.page.locator('.toast, .alert-success, [role="alert"]');
   }
+
 
 
   async verifyProductAddedToCart(): Promise<void> {
